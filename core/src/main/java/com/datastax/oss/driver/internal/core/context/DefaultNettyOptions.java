@@ -29,6 +29,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultPromise;
@@ -36,6 +37,8 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.internal.PlatformDependent;
+
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -179,7 +182,21 @@ public class DefaultNettyOptions implements NettyOptions {
 
   @Override
   public void afterChannelInitialized(Channel channel) {
-    // nothing to do
+    if (config.isDefined(DefaultDriverOption.SOCKS_PROXY_HOST)
+            && config.getString(DefaultDriverOption.SOCKS_PROXY_HOST) != "none"
+            && config.isDefined(DefaultDriverOption.SOCKS_PROXY_PORT)
+            && config.getInt(DefaultDriverOption.SOCKS_PROXY_PORT) > 0) {
+      try {
+        channel
+                .pipeline()
+                .addFirst(new Socks5ProxyHandler(new InetSocketAddress(
+                        config.getString(DefaultDriverOption.SOCKS_PROXY_HOST),
+                        config.getInt(DefaultDriverOption.SOCKS_PROXY_PORT))
+                ));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   @Override

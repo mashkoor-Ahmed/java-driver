@@ -37,7 +37,6 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.internal.PlatformDependent;
-
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.ThreadFactory;
@@ -183,16 +182,17 @@ public class DefaultNettyOptions implements NettyOptions {
   @Override
   public void afterChannelInitialized(Channel channel) {
     if (config.isDefined(DefaultDriverOption.SOCKS_PROXY_HOST)
-            && config.getString(DefaultDriverOption.SOCKS_PROXY_HOST) != "none"
-            && config.isDefined(DefaultDriverOption.SOCKS_PROXY_PORT)
-            && config.getInt(DefaultDriverOption.SOCKS_PROXY_PORT) > 0) {
+        && !config.getString(DefaultDriverOption.SOCKS_PROXY_HOST).equals("none")
+        && config.isDefined(DefaultDriverOption.SOCKS_PROXY_PORT)
+        && config.getInt(DefaultDriverOption.SOCKS_PROXY_PORT) > 0) {
       try {
         channel
-                .pipeline()
-                .addFirst(new Socks5ProxyHandler(new InetSocketAddress(
+            .pipeline()
+            .addFirst(
+                new Socks5ProxyHandler(
+                    new InetSocketAddress(
                         config.getString(DefaultDriverOption.SOCKS_PROXY_HOST),
-                        config.getInt(DefaultDriverOption.SOCKS_PROXY_PORT))
-                ));
+                        config.getInt(DefaultDriverOption.SOCKS_PROXY_PORT))));
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
